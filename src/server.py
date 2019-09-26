@@ -1,45 +1,9 @@
 # IMPORTS
-import socket
+from utils import *
 import select
 import datetime
-
-
-# CONFIGURATION VARIABLES
-COMMAND_TYPES = [0x0001, 0x0002]    # 1:date, 2:time
-MONTHS_MAORI = ["Kohitatea", "Hui-tanguru", "Poutu-te-rangi", "Paenga-whawha", "Haratua", "Pipiri", "Hongongoi", "Here-turi-koka", "Mahuru", "Whiringa-a-nuku", "Whiringa-a-rangi", "Hakihea"]
-MONTHS_GERMAN = ["Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
-
-
-# ERROR MESSAGES
-ERROR_INVALID_PORT_NUMBER = "ERROR: All three port numbers ({}, {}, {}) must be integers between 1,024 and 64,000."
-ERROR_DUPLICATE_PORT_NUMBER = "ERROR: All three port numbers ({}, {}, {}) must be unique."
-ERROR_INVALID_INPUT = "ERROR: Input is invalid, please provide exactly three port numbers (1: English, 2: Maori, 3: German)."
-ERROR_PORT_FORBIDDEN = "ERROR: At least one of the given port numbers are occupied by another process."
-ERROR_SOCKET_BIND_CREATION = "ERROR: Could not create sockets or bind ports."
-ERROR_NO_SOCKET = "ERROR: No UDP sockets currently exist."
-ERROR_FOREIGN_PORT = "ERROR: The incoming packet was from an unrecognised port number."
-ERROR_PROCESS_INCOMING = "ERROR: Failed to process the incoming packet."
-ERROR_MALFORMED_REQUEST = "ERROR: The client ({}:{}) has provided a malformed request of: {}."
-ERROR_TEXT_PAYLOAD_OVERFLOW = "ERROR: The textual representation payload has exceeded the maximum length of 255."
-
-
-# STATUS MESSAGES
-STATUS_SERVER_STARTING = "STATUS: Starting server..."
-STATUS_CREATING_SOCKETS = "STATUS: Creating three language sockets..."
-STATUS_BINDING_PORTS = "STATUS: Binding language ports, English: {}, Maori: {}, German: {}..."
-STATUS_STARTING_TO_LISTEN = "STATUS: Listening to open ports..."
-STATUS_SERVER_SHUTDOWN = "STATUS: Shutting down server..."
-STATUS_CLOSING_SOCKETS = "STATUS: Closing active sockets..."
-
-
-# SUCCESS MESSAGES
-SUCCESS_VALID_INPUT = "SUCCESS: Input is valid."
-SUCCESS_SOCKETS_CREATED = "SUCCESS: Three sockets have been created."
-SUCCESS_PORTS_BOUND = "SUCCESS: Three language ports are now bound."
-SUCCESS_RECEIVED_INCOMING = "SUCCESS: Received packet: {} from the port: {}"
-SUCCESS_RESPONSE_PACKET_CREATED = "SUCCESS: Response packet created."
-SUCCESS_RESPONSE_PACKET_SENT = "SUCCESS: Response packet sent to {}:{}."
-SUCCESS_REQUEST_VALID = "SUCCESS: The client's ({}:{}) request: {} is valid."
+import constants.config as cfg
+import constants.responses as responses
 
 
 # Start of class ---------------------------------------------------------------
@@ -69,11 +33,11 @@ class Server:
     # Operational functions ----------------------------------------------------
     def begin_listening(self):
         """
-            Begins listening to the open socekts and calls methods to process
+            Begins listening to the open sockets and calls methods to process
             incoming packets when they are detected.
             Returns true when a packet comes in through a valid port, and false otherwise.
         """
-        print(STATUS_STARTING_TO_LISTEN)
+        print(responses.STATUS_STARTING_TO_LISTEN)
         sockets = [self.english_sc, self.maori_sc, self.german_sc]
 
         try:
@@ -92,11 +56,11 @@ class Server:
                 return True
 
             else:
-                print(ERROR_FOREIGN_PORT)
+                print(responses.ERROR_FOREIGN_PORT)
                 return False
 
         except:
-            print(ERROR_NO_SOCKET)
+            print(responses.ERROR_NO_SOCKET)
             return False
 
 
@@ -108,24 +72,24 @@ class Server:
         """
         try:
             data, bounce_back_address = sc.recvfrom(4096)
-            print(SUCCESS_RECEIVED_INCOMING.format(data, port))
+            print(responses.SUCCESS_RECEIVED_INCOMING.format(data, port))
 
             if self.validate_request(data, bounce_back_address):
 
                 # Form a response packet
                 packet = self.create_dt_response_packet(data, port)
-                if packet != None:
-                    print(SUCCESS_RESPONSE_PACKET_CREATED)
+                if packet is not None:
+                    print(responses.SUCCESS_RESPONSE_PACKET_CREATED)
 
                     # Send response packet to client
                     sc.sendto(packet, bounce_back_address)
-                    print(SUCCESS_RESPONSE_PACKET_SENT.format(bounce_back_address[0], bounce_back_address[1]))
+                    print(responses.SUCCESS_RESPONSE_PACKET_SENT.format(bounce_back_address[0], bounce_back_address[1]))
 
             else:
-                print(ERROR_MALFORMED_REQUEST.format(bounce_back_address[0], bounce_back_address[1], data))
+                print(responses.ERROR_MALFORMED_REQUEST.format(bounce_back_address[0], bounce_back_address[1], data))
 
         except:
-            print(ERROR_PROCESS_INCOMING)
+            print(responses.ERROR_PROCESS_INCOMING)
 
 
     def validate_request(self, data, bounce_back_address):
@@ -148,11 +112,11 @@ class Server:
             error_codes.append(3)
 
         # Check that the RequestType field contains either 0x0001 or 0x0002
-        elif ((data[4] << 8) | data[5]) not in COMMAND_TYPES:
+        elif ((data[4] << 8) | data[5]) not in cfg.COMMAND_TYPES:
             error_codes.append(4)
 
         if len(error_codes) == 0:
-            print(SUCCESS_REQUEST_VALID.format(bounce_back_address[0], bounce_back_address[1], data))
+            print(responses.SUCCESS_REQUEST_VALID.format(bounce_back_address[0], bounce_back_address[1], data))
             return True
 
         else:
@@ -165,23 +129,23 @@ class Server:
             Creates three udp sockets and binds them to the given port numbers.
         """
         try:
-            print(STATUS_CREATING_SOCKETS)
+            print(responses.STATUS_CREATING_SOCKETS)
             self.english_sc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.maori_sc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.german_sc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            print(SUCCESS_SOCKETS_CREATED)
+            print(responses.SUCCESS_SOCKETS_CREATED)
 
-            print(STATUS_BINDING_PORTS.format(self.ports['English'], self.ports['Te reo Maori'], self.ports['German']))
+            print(responses.STATUS_BINDING_PORTS.format(self.ports['English'], self.ports['Te reo Maori'], self.ports['German']))
             self.english_sc.bind(('localhost', self.ports['English']))
             self.maori_sc.bind(('localhost', self.ports['Te reo Maori']))
             self.german_sc.bind(('localhost', self.ports['German']))
-            print(SUCCESS_PORTS_BOUND)
+            print(responses.SUCCESS_PORTS_BOUND)
 
         except OSError:
-            print(ERROR_PORT_FORBIDDEN)
+            print(responses.ERROR_PORT_FORBIDDEN)
 
         except:
-            print(ERROR_SOCKET_BIND_CREATION)
+            print(responses.ERROR_SOCKET_BIND_CREATION)
 
 
     def create_dt_response_packet(self, data, port):
@@ -190,6 +154,7 @@ class Server:
             Returns a valid response packet in the requested language.
         """
         now = datetime.datetime.now()
+        textual_representation = ""
 
         # Magic number (2 bytes)
         byte_1 = 0x49
@@ -201,10 +166,10 @@ class Server:
 
         # Language Code (2 bytes)
         byte_5 = 0x00
+        byte_6 = 0x01  # Default to English.
 
         # English
         if port == self.ports['English']:
-            byte_6 = 0x01
 
             # Date request
             if ((data[4] << 8) | data[5]) == 0x0001:
@@ -220,7 +185,7 @@ class Server:
 
             # Date request
             if ((data[4] << 8) | data[5]) == 0x0001:
-                textual_representation = "Ko te ra o tenei ra ko {} {:0>2}, {:0>4}".format(MONTHS_MAORI[now.month-1], now.day, now.year)
+                textual_representation = "Ko te ra o tenei ra ko {} {:0>2}, {:0>4}".format(cfg.MONTHS_MAORI[now.month-1], now.day, now.year)
 
             # Time request
             elif ((data[4] << 8) | data[5]) == 0x0002:
@@ -232,7 +197,7 @@ class Server:
 
             # Date request
             if ((data[4] << 8) | data[5]) == 0x0001:
-                textual_representation = "Heute ist der {:0>2}. {} {:0>4}".format(now.day, MONTHS_GERMAN[now.month-1], now.year)
+                textual_representation = "Heute ist der {:0>2}. {} {:0>4}".format(now.day, cfg.MONTHS_GERMAN[now.month-1], now.year)
 
             # Time request
             elif ((data[4] << 8) | data[5]) == 0x0002:
@@ -259,7 +224,7 @@ class Server:
         byte_13 = len(text_in_bytes) & 0xFF
 
         if len(text_in_bytes) > 0xFF:
-            print(ERROR_TEXT_PAYLOAD_OVERFLOW)
+            print(responses.ERROR_TEXT_PAYLOAD_OVERFLOW)
             return None
 
         dt_res_packet = bytearray([ byte_1, byte_2, byte_3, byte_4, byte_5,
@@ -303,15 +268,15 @@ def valid_port(input_array):
                 port_array.append(int(port))
 
             elif not (1024 < int(port) < 64000):
-                print(ERROR_INVALID_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
+                print(responses.ERROR_SERVER_INVALID_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
                 return False
 
             elif int(port) in port_array:
-                print(ERROR_DUPLICATE_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
+                print(responses.ERROR_DUPLICATE_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
                 return False
 
     except:
-        print(ERROR_INVALID_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
+        print(responses.ERROR_SERVER_INVALID_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
         return False
 
     if len(port_array) == 3:
@@ -324,7 +289,7 @@ def check_input(input_array):
         Returns true if all tests are passed, false otherwise.
     """
     if len(input_array) != 3:
-        print(ERROR_INVALID_INPUT)
+        print(responses.ERROR_INVALID_INPUT)
         return False
 
     if not valid_port(input_array):
@@ -338,7 +303,7 @@ def start_server(input_array):
         Instantiates a server object and instructs it to create and listen
         to three sockets for incoming packets.
     """
-    print(STATUS_SERVER_STARTING)
+    print(responses.STATUS_SERVER_STARTING)
 
     # Instantiate a new server object which listens to the provided ports
     server = Server(input_array[0], input_array[1], input_array[2])
@@ -350,11 +315,11 @@ def start_server(input_array):
     while 1:
         server.begin_listening()
 
-    print(STATUS_CLOSING_SOCKETS)
+    print(responses.STATUS_CLOSING_SOCKETS)
     server.english_sc.close()
     server.maori_sc.close()
     server.german_sc.close()
-    print(STATUS_SERVER_SHUTDOWN)
+    print(responses.STATUS_SERVER_SHUTDOWN)
 
 
 # RUNTIME
@@ -363,5 +328,5 @@ if __name__ == '__main__':
     valid_input = check_input(input_array)
 
     if valid_input:
-        print(SUCCESS_VALID_INPUT)
+        print(responses.SUCCESS_VALID_INPUT)
         start_server(input_array)
