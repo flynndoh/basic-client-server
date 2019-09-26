@@ -19,18 +19,18 @@ class Server:
         """
         # Initialise ports
         self.ports = {
-                        "English" : int(port1),
-                        "Te reo Maori" : int(port2),
-                        "German" : int(port3)
-                     }
+            "English": int(port1),
+            "Te reo Maori": int(port2),
+            "German": int(port3)
+        }
 
         # Initialise sockets
         self.english_sc = None
         self.maori_sc = None
         self.german_sc = None
 
-
     # Operational functions ----------------------------------------------------
+
     def begin_listening(self):
         """
             Begins listening to the open sockets and calls methods to process
@@ -44,15 +44,18 @@ class Server:
             incoming, outgoing, exceptions = select.select(sockets, [], [])
 
             if incoming[0] == self.english_sc:
-                self.process_incoming(incoming[0], self.english_sc, self.ports['English'])
+                self.process_incoming(
+                    incoming[0], self.english_sc, self.ports['English'])
                 return True
 
             elif incoming[0] == self.maori_sc:
-                self.process_incoming(incoming[0], self.maori_sc, self.ports['Te reo Maori'])
+                self.process_incoming(
+                    incoming[0], self.maori_sc, self.ports['Te reo Maori'])
                 return True
 
             elif incoming[0] == self.german_sc:
-                self.process_incoming(incoming[0],  self.german_sc, self.ports['German'])
+                self.process_incoming(
+                    incoming[0],  self.german_sc, self.ports['German'])
                 return True
 
             else:
@@ -62,7 +65,6 @@ class Server:
         except:
             print(responses.ERROR_NO_SOCKET)
             return False
-
 
     def process_incoming(self, incoming, sc, port):
         """
@@ -83,14 +85,15 @@ class Server:
 
                     # Send response packet to client
                     sc.sendto(packet, bounce_back_address)
-                    print(responses.SUCCESS_RESPONSE_PACKET_SENT.format(bounce_back_address[0], bounce_back_address[1]))
+                    print(responses.SUCCESS_RESPONSE_PACKET_SENT.format(
+                        bounce_back_address[0], bounce_back_address[1]))
 
             else:
-                print(responses.ERROR_MALFORMED_REQUEST.format(bounce_back_address[0], bounce_back_address[1], data))
+                print(responses.ERROR_MALFORMED_REQUEST.format(
+                    bounce_back_address[0], bounce_back_address[1], data))
 
         except:
             print(responses.ERROR_PROCESS_INCOMING)
-
 
     def validate_request(self, data, bounce_back_address):
         """
@@ -116,14 +119,15 @@ class Server:
             error_codes.append(4)
 
         if len(error_codes) == 0:
-            print(responses.SUCCESS_REQUEST_VALID.format(bounce_back_address[0], bounce_back_address[1], data))
+            print(responses.SUCCESS_REQUEST_VALID.format(
+                bounce_back_address[0], bounce_back_address[1], data))
             return True
 
         else:
             return False
 
-
     # Creation functions -------------------------------------------------------
+
     def create_udp_sockets(self):
         """
             Creates three udp sockets and binds them to the given port numbers.
@@ -135,7 +139,8 @@ class Server:
             self.german_sc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             print(responses.SUCCESS_SOCKETS_CREATED)
 
-            print(responses.STATUS_BINDING_PORTS.format(self.ports['English'], self.ports['Te reo Maori'], self.ports['German']))
+            print(responses.STATUS_BINDING_PORTS.format(
+                self.ports['English'], self.ports['Te reo Maori'], self.ports['German']))
             self.english_sc.bind(('localhost', self.ports['English']))
             self.maori_sc.bind(('localhost', self.ports['Te reo Maori']))
             self.german_sc.bind(('localhost', self.ports['German']))
@@ -146,7 +151,6 @@ class Server:
 
         except:
             print(responses.ERROR_SOCKET_BIND_CREATION)
-
 
     def create_dt_response_packet(self, data, port):
         """
@@ -173,11 +177,13 @@ class Server:
 
             # Date request
             if ((data[4] << 8) | data[5]) == 0x0001:
-                textual_representation = "Today’s date is {} {:0>2}, {:0>4}".format(now.strftime("%B"), now.day, now.year)
+                textual_representation = "Today’s date is {} {:0>2}, {:0>4}".format(
+                    now.strftime("%B"), now.day, now.year)
 
             # Time request
             elif ((data[4] << 8) | data[5]) == 0x0002:
-                textual_representation = "The current time is {:0>2}:{:0>2}".format(now.hour, now.minute)
+                textual_representation = "The current time is {:0>2}:{:0>2}".format(
+                    now.hour, now.minute)
 
         # Te reo Maori
         elif port == self.ports['Te reo Maori']:
@@ -185,11 +191,13 @@ class Server:
 
             # Date request
             if ((data[4] << 8) | data[5]) == 0x0001:
-                textual_representation = "Ko te ra o tenei ra ko {} {:0>2}, {:0>4}".format(cfg.MONTHS_MAORI[now.month-1], now.day, now.year)
+                textual_representation = "Ko te ra o tenei ra ko {} {:0>2}, {:0>4}".format(
+                    cfg.MONTHS_MAORI[now.month-1], now.day, now.year)
 
             # Time request
             elif ((data[4] << 8) | data[5]) == 0x0002:
-                textual_representation = "Ko te wa o tenei wa {:0>2}:{:0>2}".format(now.hour, now.minute)
+                textual_representation = "Ko te wa o tenei wa {:0>2}:{:0>2}".format(
+                    now.hour, now.minute)
 
         # German
         elif port == self.ports['German']:
@@ -197,11 +205,13 @@ class Server:
 
             # Date request
             if ((data[4] << 8) | data[5]) == 0x0001:
-                textual_representation = "Heute ist der {:0>2}. {} {:0>4}".format(now.day, cfg.MONTHS_GERMAN[now.month-1], now.year)
+                textual_representation = "Heute ist der {:0>2}. {} {:0>4}".format(
+                    now.day, cfg.MONTHS_GERMAN[now.month-1], now.year)
 
             # Time request
             elif ((data[4] << 8) | data[5]) == 0x0002:
-                textual_representation = "Die Uhrzeit ist {:0>2}:{:0>2}".format(now.hour, now.minute)
+                textual_representation = "Die Uhrzeit ist {:0>2}:{:0>2}".format(
+                    now.hour, now.minute)
 
         # Year (2 bytes)
         byte_7 = (now.year >> 8) & 0xFF
@@ -227,9 +237,9 @@ class Server:
             print(responses.ERROR_TEXT_PAYLOAD_OVERFLOW)
             return None
 
-        dt_res_packet = bytearray([ byte_1, byte_2, byte_3, byte_4, byte_5,
-                                    byte_6, byte_7, byte_8, byte_9, byte_10,
-                                    byte_11, byte_12, byte_13 ])
+        dt_res_packet = bytearray([byte_1, byte_2, byte_3, byte_4, byte_5,
+                                   byte_6, byte_7, byte_8, byte_9, byte_10,
+                                   byte_11, byte_12, byte_13])
 
         # Text
         for byte in text_in_bytes:
@@ -248,7 +258,7 @@ def read_from_terminal():
             [1] -> port number 2    (Te reo Maori)
             [2] -> port number 3    (German)
     """
-    raw_input = input()
+    raw_input = input("> ")
     input_array = raw_input.strip().split()
     return input_array
 
@@ -268,15 +278,18 @@ def valid_port(input_array):
                 port_array.append(int(port))
 
             elif not (1024 < int(port) < 64000):
-                print(responses.ERROR_SERVER_INVALID_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
+                print(responses.ERROR_SERVER_INVALID_PORT_NUMBER.format(
+                    input_array[0], input_array[1], input_array[2]))
                 return False
 
             elif int(port) in port_array:
-                print(responses.ERROR_DUPLICATE_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
+                print(responses.ERROR_DUPLICATE_PORT_NUMBER.format(
+                    input_array[0], input_array[1], input_array[2]))
                 return False
 
     except:
-        print(responses.ERROR_SERVER_INVALID_PORT_NUMBER.format(input_array[0], input_array[1], input_array[2]))
+        print(responses.ERROR_SERVER_INVALID_PORT_NUMBER.format(
+            input_array[0], input_array[1], input_array[2]))
         return False
 
     if len(port_array) == 3:
@@ -324,9 +337,12 @@ def start_server(input_array):
 
 # RUNTIME
 if __name__ == '__main__':
-    input_array = read_from_terminal()
-    valid_input = check_input(input_array)
 
-    if valid_input:
-        print(responses.SUCCESS_VALID_INPUT)
-        start_server(input_array)
+    valid_input = False
+    while not valid_input:
+        print(responses.INFO_PORT_NUMBERS)
+        input_array = read_from_terminal()
+        valid_input = check_input(input_array)
+
+    print(responses.SUCCESS_VALID_INPUT)
+    start_server(input_array)

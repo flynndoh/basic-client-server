@@ -3,7 +3,8 @@ ERROR_INVALID_PORT_NUMBER = "ERROR: The given port number ({}) is not an integer
 ERROR_INVALID_CONNECTION = "ERROR: Could not establish a connection to '{}'. Please verify the connection information."
 ERROR_INVALID_INPUT = "ERROR: Input is invalid, please check your input and try again."
 SUCCESS_VALID_INPUT = "SUCCESS: Input is valid."
-
+INFO_PORT_NUMBERS = "Enter 3 port numbers to listen to:\n (English) (Maori) (German)"
+INFO_CLIENT_SETUP = "Enter your request in the format:\n ('date' or 'time') (host) (port)"
 
 # CLIENT ERROR MESSAGES
 ERROR_SOCKET_ALREADY_EXISTS = "ERROR: UDP socket already exists. Please call 'client.delete_udp_socket()' before trying to re-create the socket."

@@ -22,14 +22,15 @@ class Client:
         self.sc = None
         self.dt_req_packet = None
 
-
     # Operational functions ----------------------------------------------------
+
     def send_packet(self, packet):
         """
             Given a packet, send it through the open socket.
         """
         if self.sc is not None and packet == self.dt_req_packet:
-            print(responses.STATUS_SENDING_PACKET.format(packet, self.server_ip_address, self.server_port))
+            print(responses.STATUS_SENDING_PACKET.format(
+                packet, self.server_ip_address, self.server_port))
 
             try:
                 # Set the socket's timeout to a given time
@@ -42,20 +43,24 @@ class Client:
                 data, bounce_back_address = self.sc.recvfrom(4096)
 
                 if len(data) is not None:
-                    print(responses.SUCCESS_RECEIVED_BOUNCE_BACK.format(bounce_back_address[0], bounce_back_address[1]))
+                    print(responses.SUCCESS_RECEIVED_BOUNCE_BACK.format(
+                        bounce_back_address[0], bounce_back_address[1]))
 
                     # If the response packet is valid
                     if self.validate_bounce_back(data, bounce_back_address):
                         self.print_bounce_back(data)
 
                 else:
-                    print(responses.ERROR_MALFORMED_BOUNCE_BACK.format(bounce_back_address[0], bounce_back_address[1], data))
+                    print(responses.ERROR_MALFORMED_BOUNCE_BACK.format(
+                        bounce_back_address[0], bounce_back_address[1], data))
 
             except socket.timeout:
-                print(responses.ERROR_BOUNCE_BACK_TIMEOUT.format(responses.CONFIG_RESPONSE_WAITTIME))
+                print(responses.ERROR_BOUNCE_BACK_TIMEOUT.format(
+                    responses.CONFIG_RESPONSE_WAITTIME))
 
             except ConnectionResetError:
-                print(responses.ERROR_CONNECTION_REFUSED.format(self.server_ip_address, self.server_port))
+                print(responses.ERROR_CONNECTION_REFUSED.format(
+                    self.server_ip_address, self.server_port))
 
         # If the request packet is not the client's packet
         elif packet != self.dt_req_packet:
@@ -64,7 +69,6 @@ class Client:
         # If there is no open socket
         elif self.sc is None:
             print(responses.ERROR_NO_SOCKET)
-
 
     def validate_bounce_back(self, data, bounce_back_address):
         """
@@ -111,18 +115,19 @@ class Client:
 
         # Check that the Length field is a valid representation of the packet
         elif len(data) != (data[12] + 13):
-            print("len(data):",len(data))
-            print("(data[12] + 13)",(data[12] + 13))
+            print("len(data):", len(data))
+            print("(data[12] + 13)", (data[12] + 13))
             error_codes.append(10)
 
         if len(error_codes) == 0:
-            print(responses.SUCCESS_VALID_BOUNCE_BACK.format(bounce_back_address[0], bounce_back_address[1], data))
+            print(responses.SUCCESS_VALID_BOUNCE_BACK.format(
+                bounce_back_address[0], bounce_back_address[1], data))
             return True
 
         else:
-            print(responses.ERROR_MALFORMED_BOUNCE_BACK.format(bounce_back_address[0], bounce_back_address[1], data, error_codes))
+            print(responses.ERROR_MALFORMED_BOUNCE_BACK.format(
+                bounce_back_address[0], bounce_back_address[1], data, error_codes))
             return False
-
 
     def print_bounce_back(self, data):
         """
@@ -143,8 +148,8 @@ class Client:
             print("- Text:           {}".format(data[13:].decode()))
         print("-" * 50)
 
-
     # Creation functions -------------------------------------------------------
+
     def create_udp_socket(self):
         """
             Simply creates and opens a UDP socket.
@@ -158,7 +163,6 @@ class Client:
 
         else:
             print(responses.ERROR_SOCKET_ALREADY_EXISTS)
-
 
     def create_dt_request_packet(self):
         """
@@ -186,13 +190,14 @@ class Client:
             elif self.command == "time":
                 byte_6 = 0x02
 
-            self.dt_req_packet = bytearray([byte_1, byte_2, byte_3, byte_4, byte_5, byte_6])
+            self.dt_req_packet = bytearray(
+                [byte_1, byte_2, byte_3, byte_4, byte_5, byte_6])
             return self.dt_req_packet
         else:
             print(responses.ERROR_DT_REQUEST_ALREADY_EXISTS)
 
-
     # Deletion functions -------------------------------------------------------
+
     def delete_udp_socket(self):
         """
             Closes and deletes an open UDP socket.
@@ -205,7 +210,6 @@ class Client:
 
         else:
             print(responses.ERROR_NO_SOCKET)
-
 
     def delete_dt_request_packet(self):
         """
@@ -229,7 +233,7 @@ def read_from_terminal():
             [1] -> ip address
             [2] -> port
     """
-    raw_input = input()
+    raw_input = input("> ")
     input_array = raw_input.strip().split()
     return input_array
 
@@ -244,7 +248,8 @@ def check_input(input_array):
         return False
 
     if not valid_command(input_array):
-        print(responses.ERROR_INVALID_COMMAND.format(input_array[0], cfg.CONFIG_VALID_REQUESTS))
+        print(responses.ERROR_INVALID_COMMAND.format(
+            input_array[0], cfg.CONFIG_VALID_REQUESTS))
         return False
 
     if not valid_connection(input_array):
@@ -280,9 +285,12 @@ def start_client(input_array):
 
 # RUNTIME
 if __name__ == '__main__':
-    input_array = read_from_terminal()
-    valid_input = check_input(input_array)
 
-    if valid_input:
-        print(responses.SUCCESS_VALID_INPUT)
-        start_client(input_array)
+    valid_input = False
+    while not valid_input:
+        print(responses.INFO_CLIENT_SETUP)
+        input_array = read_from_terminal()
+        valid_input = check_input(input_array)
+
+    print(responses.SUCCESS_VALID_INPUT)
+    start_client(input_array)
